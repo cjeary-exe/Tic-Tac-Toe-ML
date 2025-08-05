@@ -102,32 +102,55 @@ def player_turn():
             print("Cell already taken. Try again.")
 
 
-def computer_turn():
+def computer_turn(b):
     print("Computer's turn")
+    print_board(b)
 
-    print_board(board)
+    row, col = best_move(b)
+    make_move(b, row, col, 'O')
 
-    if can_player_win(board, 'O'):
-        winningMove = find_winning_move(board, 'O')
-        if winningMove is not None:
-            make_move(board, winningMove[0], winningMove[1], 'O')
-    elif can_player_win(board, 'O'):
-        winningMove = find_winning_move(board, 'X')
-        if winningMove is not None:
-            make_move(board, winningMove[0], winningMove[1], 'O')
+def evaluate(b):
+    if has_won(b, 'O'):
+        return +1
+    elif has_won(b, 'X'):
+        return -1
     else:
-        if board[1][1] == ' ':
-            make_move(board, 1, 1, 'O')
-        elif board[0][0] == ' ':
-            make_move(board, 0, 0, 'O')
-        elif board[0][2] == ' ':
-            make_move(board, 0, 2, 'O')
-        elif board[2][0] == ' ':
-            make_move(board, 2, 0, 'O')
-        elif board[2][2] == ' ':
-            make_move(board, 2, 2, 'O')
+        return 0
 
+def simulate(b, depth, is_maximizing):
+    score = evaluate(b)
 
+    if score == 1 or score == -1 or not get_empty_cells(b):
+        return score
+
+    if is_maximizing:
+        best_score = -float('inf')
+        for (i, j) in get_empty_cells(b):
+            b[i][j] = 'O'
+            value = simulate(b, depth + 1, False)
+            b[i][j] = ' '
+            best_score = max(best_score, value)
+        return best_score
+    else:
+        best_score = float('inf')
+        for (i, j) in get_empty_cells(b):
+            b[i][j] = 'X'
+            value = simulate(b, depth + 1, True)
+            b[i][j] = ' '
+            best_score = min(best_score, value)
+        return best_score
+
+def best_move(b):
+    best_score = -float('inf')
+    move = None
+    for (i, j) in get_empty_cells(b):
+        b[i][j] = 'O'
+        score = simulate(b, 0, False)
+        b[i][j] = ' '
+        if score > best_score:
+            best_score = score
+            move = (i, j)
+    return move
 
 gameOver = False
 board = reset_board()
@@ -141,7 +164,7 @@ while not gameOver:
         player_turn()
         turn = 1
     else:
-        computer_turn()
+        computer_turn(board)
         turn = 0
 
     if has_won(board, 'X'):
@@ -156,3 +179,4 @@ while not gameOver:
 
 
 print(winner)
+print_board(board)
